@@ -18,51 +18,77 @@ npx prisma init --datasource-provider postgresql
 
 ```
 
-4. schema cmd.txt
+4. schema cmd.txt (go to /schema)
 
 
 5.Create a Prisma Client Instance
 ```
 // lib/prisma.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
-let prisma: PrismaClient;
+const globalForPrisma = global as unknown as {
+    prisma: PrismaClient | undefined;
+};
 
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  if (!(global as any).prisma) {
-    (global as any).prisma = new PrismaClient();
-  }
-  prisma = (global as any).prisma;
+const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = prisma;
 }
 
 export default prisma;
+
 ```
+
+Run
+```
+npm install prisma@6 @prisma/client@6
+npx prisma generate
+```
+
 6. Use Prisma Client in Next.js
 ```
-// pages/api/posts.ts
-import prisma from '../../lib/prisma';
+// app/api/post/route.ts
+import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-export default async function handler(req, res) {
-  if (req.method === 'GET') {
+export async function GET() {
     const posts = await prisma.post.findMany();
-    res.status(200).json(posts);
-  } else if (req.method === 'POST') {
-    const { title, content } = req.body;
+    return NextResponse.json(posts);
+}
+
+export async function POST(req: NextRequest) {
+    const { title, content } = await req.json();
     const newPost = await prisma.post.create({
-      data: { title, content },
+        data: { title, content },
     });
-    res.status(201).json(newPost);
-  } else {
-    res.setHeader('Allow', ['GET', 'POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
+    return NextResponse.json(newPost, { status: 201 });
+}
+
+
+// app //api/hello/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+
+export async function GET(req: NextRequest) {
+    const response = NextResponse.json({ 
+        LEAP: 'Hello Next.js!🍀🍀🍀',
+    });
+
+    return response;
+}
+
+```
+```
+body post 
+{
+  "title": "My first post",
+  "content": "Hello world!"
 }
 
 ```
 
-7.Database Migrations (Optional)
+7.Database Migrations (Optional) - Need Database !!!
 
 ```
 npx prisma migrate dev --name init

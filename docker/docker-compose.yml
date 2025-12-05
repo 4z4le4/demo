@@ -11,32 +11,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
-  redis:
-    image: redis:7
-    container_name: redis-aof
-    command: >
-      redis-server
-      --appendonly yes
-      --appendfsync everysec
-      --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis-data:/data
-    ports:
-      - "6379:6379"
-
   # web:
   #   build: .
   #   ports:
-  #     - "9999:9999"
+  #     - "3000:3000"
   #   env_file:
   #     - .env
   #   depends_on:
   #     - db
-  #     - redis
 
 volumes:
   postgres_data:
-  redis-data:
+  
 networks:
   sdshop-network:
     driver: bridge
